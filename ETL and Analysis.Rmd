@@ -1,0 +1,49 @@
+## Loading and Installing Libraries
+
+### Method 1
+
+```{r}
+
+# Read Packages
+library(readxl)       # Read xlsx format (fast)
+library(writexl)      # Write xlsc format (fast)
+library(read.csv)     # Read csv format (fast)
+library(haven)        # Import and Export SPSS, Stata and SAS Files
+
+# Data Transformation Packages
+library(data.table) 
+library(dplyr)
+
+# Tool Packages
+library(lubridate)
+library(stringr)
+library(zoo)
+library(janitor)
+
+# Multitread Packages
+library(doParallel)
+library(foreach)
+
+
+```
+
+### Method 2
+
+```{r}
+source("Dependecies.R")
+```
+
+
+## Setting Display and Scientic Penalties
+```{r}
+options(scipen=999)       # Maximum accuracy
+options(max.print = 9999) # Printing Options
+```
+
+## Reading in Data
+
+```{r}
+Policy_data <- read.csv("Files/Claims Data.csv")
+
+```
+

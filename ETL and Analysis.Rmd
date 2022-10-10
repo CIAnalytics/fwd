@@ -1,14 +1,49 @@
-## Loading and Installing Libraries
+![](Misc/Gen_Re_logo.svg){width="335"}
 
-### Method 1
+# Workshop Title: Data Analytics in R
 
-```{r}
+This workshop will cover some of the steps we need to sanitise the data before we can do analysis in R. This will be a hands-on session.
+
+The key focus areas for this session are:
+
+-   Setting up an R Project
+
+-   Libraries that are commonly used
+
+-   Data Loading
+
+-   Data Exploration
+
+-   Data Transformation
+
+-   Analysis using IBNR calculation
+
+Take-aways are:
+
+-   A high-level understanding of what R can do.
+
+-   How to properly set up a project for use.
+
+-   Data preparation and manipulation in R.
+
+-   Analysis with R.
+
+This session will use the pseudo data provided by us. Our goal is to \_\_\_\_\_\_\_\_\_.
+
+## 1) Loading and Installing Libraries
+
+#### Method 1
+
+```{r , warning=FALSE, message=FALSE}
 
 # Read Packages
 library(readxl)       # Read xlsx format (fast)
 library(writexl)      # Write xlsc format (fast)
-library(read.csv)     # Read csv format (fast)
 library(haven)        # Import and Export SPSS, Stata and SAS Files
+
+# Data Summary Packages
+library(skimr)
+library(DataExplorer)
 
 # Data Transformation Packages
 library(data.table) 
@@ -27,23 +62,413 @@ library(foreach)
 
 ```
 
-### Method 2
+#### Method 2
 
 ```{r}
-source("Dependecies.R")
+
+# source("Dependecies.R")
 ```
 
+## 2) Setting Display and Scientific Penalties
 
-## Setting Display and Scientic Penalties
 ```{r}
+
+rm(list=ls()) # Removes all objects in R environment
+
+gc() # This clears the cache to prep. Automatically releases memory when an object is no longer used. It does this by tracking how many names point to each object, and when there are no names pointing to an object, it deletes that object.
+
+
+
 options(scipen=999)       # Maximum accuracy
 options(max.print = 9999) # Printing Options
+
+dir.create("RData/0. Misc Data") # Creating Folder for collection of Data Errors
+End.Suvery <- ymd("20200101") # Create End Point for Study
 ```
 
-## Reading in Data
+#### Reading in Data
 
 ```{r}
-Policy_data <- read.csv("Files/Claims Data.csv")
+Policy_data <- read.csv("Files/Policy Data.csv") # Savepoint / Checkpoint
+Claims_data <- read.csv("Files/Claims Data.csv") # Savepoint / Checkpoint
+
+# Set as Data Table format
+setDT(Policy_data)
+setDT(Claims_data)
+# 
+# saveRDS(Policy_data, "RData/0. Raw Data/Policy_Data.rds")
+# saveRDS(Claims_data, "RData/0. Raw Data/Claims_Data.rds")
+# Policy_data <- readRDS("RData/0. Raw Data/Policy_Data.rds")
+# Policy_data <- readRDS("RData/0. Raw Data/Policy_Data.rds")
 
 ```
 
+## 3) Mapping / Renaming Data
+
+#### Method 1
+
+```{r}
+
+# Changing the names for the column into a unified format and without spacing
+
+setnames( Policy_data, "Policy.Number"                        , "i_polnum")
+setnames( Policy_data, "Plan.Code..Dread.Disease."            , "i_plancd_dd")
+setnames( Policy_data, "Plan.Code..Basic.Plan."               , "i_plancd_ba")
+setnames( Policy_data, "Effective.Date"                       , "i_effdt")
+setnames( Policy_data, "Sales.Channel"                        , "i_chan")
+setnames( Policy_data, "Benefit.Term"                         , "i_bentm")
+setnames( Policy_data, "Premium.Payment.Term"                 , "i_prmtm")
+setnames( Policy_data, "End.of.Survey.Period.Coverage.Status" , "i_endsts")
+setnames( Policy_data, "Termination.Date"                     , "i_terdt")
+setnames( Policy_data, "Face.Amount..Dread.Disease.Benefit."  , "i_face_dd")
+setnames( Policy_data, "Insured.ID"                           , "i_insdid")
+setnames( Policy_data, "Date.of.Birth"                        , "i_dob")
+setnames( Policy_data, "Sex"                                  , "i_sex")
+
+
+setnames( Claims_data, "Policy.Number"                        ,"c_polnum")
+setnames( Claims_data, "Plan.Code..Dread.Disease."            ,"c_plancd_dd")
+setnames( Claims_data, "Plan.Code..Basic.Plan."               ,"c_plancd_ba")
+setnames( Claims_data, "Effective.Date"                       ,"c_effdt")
+setnames( Claims_data, "Event.Date"                           ,"c_occdt")
+setnames( Claims_data, "Face.Amount..Dread.Disease.Benefit."  ,"c_face_dd")
+setnames( Claims_data, "Insured.ID"                           ,"c_insdid")
+setnames( Claims_data, "Date.of.Birth"                        ,"c_dob")
+setnames( Claims_data, "Sex"                                  ,"c_sex")
+setnames( Claims_data, "Claim.amount"                         ,"c_clmamt")
+setnames( Claims_data, "Notification.Date"                     ,"c_notdt")
+setnames( Claims_data, "Settlement.Date"                       ,"c_setldt")
+setnames( Claims_data, "Claim.Status"                          ,"c_clmsts")
+setnames( Claims_data, "Claim.Category"                        ,"c_clmct")
+setnames( Claims_data, "Cause.Name"                            ,"c_cause_name")
+
+```
+
+#### Method 2
+
+```{r, eval=FALSE}
+
+# Here, we create and external data table that we can use to rename all together which is quicker and shorter
+## For more advanced users: we can create an excel to store the column names. Then type the ideal column names and read it back in
+
+# col_name_mapping <- 
+#   data.table( old_col = c("Policy.Number"                        ,
+#                           "Plan.Code..Dread.Disease."            ,
+#                           "Plan.Code..Basic.Plan."               ,
+#                           "Effective.Date"                       ,
+#                           "Sales.Channel"                        ,
+#                           "Benefit.Term"                         ,
+#                           "Premium.Payment.Term"                 ,
+#                           "End.of.Survey.Period.Coverage.Status" ,
+#                           "Termination.Date"                     ,
+#                           "Face.Amount..Dread.Disease.Benefit."  ,
+#                           "Insured.ID"                           ,
+#                           "Date.of.Birth"                        ,
+#                           "Sex"                                  ),
+#               new_col = c( "i_polnum",
+#                            "i_plancd_dd",
+#                            "i_plancd_ba",
+#                            "i_effdt",
+#                            "i_chan",
+#                            "i_bentm",
+#                            "i_prmtm",
+#                            "i_endsts",
+#                            "i_terdt",
+#                            "i_face_dd",
+#                            "i_insdid",
+#                            "i_dob",
+#                            "i_sex"))
+# 
+# setnames(Policy_data, col_name_mapping$old_col, col_name_mapping$new_col )
+
+```
+
+## 4) EDA
+
+#### Generating seq IDs for easier identification
+
+```{r}
+
+# Using 1:nrow(Policy_data) creates unique number for each row of dats - this will allow us to track the data easier
+Policy_data[ ,`:=`(i_seqid = 1:nrow(Policy_data))]
+Claims_data[ ,`:=`(c_seqid = 1:nrow(Claims_data))]
+```
+
+#### Summary of Data / Overview
+
+```{r}
+
+# Survey.Date.Start <- ymd("20150101")
+# Survey.Date.End   <- ymd("20200101")
+
+summary(Policy_data) # Base Function from R to get idea of the data
+summary(Claims_data)
+
+skimr::skim(Policy_data) # Skimming the data using external libraries to get better idea of the data
+skimr::skim(Claims_data)
+
+Policy_data[  , .N , .(is.na(i_polnum))] # Checking for missing policy number
+Policy_data[ , .N ,.(i_plancd_dd)]       # Checking for count of each plancodes and if there are any missing
+Policy_data[ , .N ,.(i_plancd_ba)]
+
+```
+
+#### Mapping of Product IDs from Plan Codes
+
+```{r}
+
+# Method 1 of mapping Plancode to Prdid - Using on Policy
+Policy_data[ str_detect(i_plancd_dd, "A") , i_prdid := "A"]
+Policy_data[ str_detect(i_plancd_dd, "B") , i_prdid := "B"]
+Policy_data[ str_detect(i_plancd_dd, "C") , i_prdid := "C"]
+Policy_data[ str_detect(i_plancd_dd, "Z") , i_prdid := "Z"]
+
+Policy_data[ , table(i_plancd_dd, i_prdid, useNA = "ifany")]
+
+# Method 2 of mapping Plancode to Prdid - Using on Claims
+plancode_mapping <- 
+  data.table( plncd  = c("A1","A2","A3","B1","B2","B3","C1","C2","C3","Z1","Z2","Z3"), prdid = c("A","A","A","B","B","B","C","C","C","Z","Z","Z"))
+
+Claims_data <- merge(Claims_data, plancode_mapping, 
+                     by.x = "c_plancd_dd",
+                     by.y = "plncd",
+                     all.x = T)
+setnames(Claims_data, "prdid" , "c_prdid")
+```
+
+#### Mapping of Channel
+
+```{r}
+Policy_data[ , .N , .(i_chan)] # Check Channel Distribution
+
+Policy_data[ i_chan  == "agency"                , i_chan := "A"]
+Policy_data[ i_chan  == "broker"               , i_chan := "O"]
+Policy_data[ i_chan  == "bank"                 , i_chan := "B"]
+```
+
+#### Finding Missing Values
+
+##### Empty Data Row
+
+```{r}
+
+# Identified one line of empty data - to be removed
+Policy_data[ is.na(i_polnum)]
+
+saveRDS(Policy_data[ is.na(i_polnum)], "RData/0. Misc Data/Error Row.rds")
+
+Policy_data <- Policy_data[ !is.na(i_polnum)]
+
+```
+
+##### Missing Gender
+
+```{r}
+Policy_data[ is.na(i_sex) , .N] # Checking for NA or missing gender
+Policy_data[ i_sex == "" , .N]
+
+Gender_table <- 
+  Policy_data[ , table(i_insdid, i_sex, useNA = "ifany")] %>% 
+  as.data.frame.matrix() %>%
+  setDT( keep.rownames = T) # Create a gender table to detect double genders
+
+Gender_table[ `F` > 0 & `M` > 0]
+
+saveRDS(Policy_data[ i_insdid == 2067] , "RData/0. Misc Data/double_gender.rds")
+Policy_data[ i_insdid == 2067,`:=`(i_sex = "F")]
+
+Missing_gender <- Policy_data[ i_sex == ""]
+saveRDS(Missing_gender,"RData/0. Misc Data/missing_gender.rds")
+# Searching in Claims Data if there are possible claims 
+Claims_data[ c_insdid %in% Missing_gender$i_insdid | 
+               c_polnum %in% Missing_gender$i_polnum]
+
+
+# Getting rough ditribution of gender to fill in missing data - can be fine tuned to product specific
+Policy_data[ !(i_seqid %in% Missing_gender$i_seqid) & i_sex == "M" , .N ] / Policy_data[ !(i_seqid %in% Missing_gender$i_seqid) , .N]
+
+Policy_data[ i_insdid %in% c("677", "4085", "909", "2795") , `:=`(i_sex  = "M")]
+Policy_data[ i_insdid %in% c("4637", "789", "4329", "4854") , `:=`(i_sex  = "M")]
+
+```
+
+#### Date Checks
+
+```{r}
+Policy_data[ ,`:=`(i_effdt = mdy(i_effdt),
+                   i_dob   = mdy(i_dob)  ,
+                   i_terdt = mdy(i_terdt))] # Changing date formats to a standard date format
+
+Policy_data[ i_terdt < i_dob   , .N] # count of Termination Date earlier than DOB
+Policy_data[ i_terdt < i_effdt , .N] # count of Termination Date earlier than Effective Date
+Policy_data[ i_effdt < i_dob   , .N] # count of Effective Date earlier than DOB
+
+Policy_data[ i_effdt < i_dob, .(i_insdid, i_polnum, i_dob, i_effdt, i_terdt)]
+
+Claims_data[ c_insdid == "904" | c_polnum == "140"]
+
+saveRDS(Policy_data[ !(i_effdt < i_dob) ], "RData/0. Misc Data/effdt_after_dob.rds")
+
+Policy_data <- Policy_data[ !(i_effdt < i_dob) ]
+
+Claims_data[ is.na(c_occdt)  ]
+Claims_data[ is.na(c_notdt)  ]
+Claims_data[ is.na(c_setldt) ]
+```
+
+#### Mapping of End Status
+
+```{r}
+Policy_data[ , .N , .(i_endsts)]
+
+# Renaming of values
+Policy_data[ i_endsts  == "In-force"                , i_endsts := "I"] 
+Policy_data[ i_endsts  == "Lapse"                   , i_endsts := "L"]
+Policy_data[ i_endsts  == "Mature"                  , i_endsts := "M"]
+Policy_data[ i_endsts  == "Terminated due to Claim" , i_endsts := "T"]
+
+# Table to show Termination Date and End Status
+#  - TRUE  : Termination Date is provided
+#  - FALSE : Termination Date is no provided
+Policy_data[ , table(i_endsts , !is.na(i_terdt) , useNA = "ifany")]
+
+Policy_data[ is.na(i_terdt) & i_endsts == "L" ,.(i_insdid, i_effdt, i_bentm)]
+
+# If Lapse and benefit term less than time period, we will lapse on survey end date
+Policy_data[ is.na(i_terdt) & 
+               i_endsts == "L" & 
+               (year(i_effdt) + i_bentm) < 2019,
+             i_terdt := End.Suvery]
+
+# If Lapse and benefit term more than end date, we will keep it as in force
+Policy_data[ is.na(i_terdt) & 
+               i_endsts == "L" & 
+               (year(i_effdt) + i_bentm) > 2019,
+             i_endsts := "I" ]
+
+# Policy_data[ is.na(i_terdt) & 
+#                i_endsts == "L" & 
+#                (year(i_effdt) + i_bentm) > 2019,
+#              
+#              `:=`(i_endsts = "S",
+# s                  i_terdt  = End.Suvery) ]
+
+```
+
+#### 
+
+#### Face Amount Checks
+
+```{r}
+Policy_data[ is.na(i_face_dd) | i_face_dd == 0]
+
+Policy_data[ , .N , .(i_face_dd)][order(i_face_dd)]
+Policy_data[ , .N , .(i_face_dd)][ , barplot(N,names.arg = sort(unique(na.omit(Policy_data$i_face_dd))), las=2 )] + 
+  title(main = list("Policy - Barplot of DD Face Amount", font = 4)) 
+  
+
+Claims_data[ is.na(c_face_dd) | c_face_dd == 0]
+Claims_data[ , .N , .(c_face_dd)][ , barplot(N,names.arg = sort(unique(na.omit(Claims_data$c_face_dd))), las=2 )] + 
+  title(main = list("Barplot of DD Face Amount", font = 4)) 
+
+Claims_data[ , .N , .(c_clmamt)][ , barplot(N,names.arg = sort(unique(na.omit(Claims_data$c_clmamt))), las=2 )] + 
+  title(main = list("Claims - Barplot of Claim Amout", font = 4)) 
+
+```
+
+#### Benefit and Premium Term Check
+
+```{r}
+Policy_data[ ,.N , .(i_prmtm)]
+Policy_data[ ,.N , .(i_prmtm)]
+Policy_data[ i_prmtm > i_bentm , .N]
+```
+
+#### Duplicate Checks
+
+```{r}
+Policy_data[ ,`:=`(pseudocode_1 = paste(i_insdid, i_plancd_dd),
+                   pseudocode_2 = paste(i_insdid, i_plancd_dd, i_dob))]
+
+Policy_data[ duplicated(i_insdid)]
+Policy_data[ duplicated(i_insdid) | duplicated(i_insdid, fromLast = T)]
+
+Policy_data[ duplicated(pseudocode_1)]
+Policy_data[ duplicated(pseudocode_1) | duplicated(pseudocode_1, fromLast = T)]
+Policy_data[ duplicated(pseudocode_2)]
+Policy_data[ duplicated(pseudocode_2) | duplicated(pseudocode_2, fromLast = T)]
+
+saveRDS(Policy_data[ duplicated(pseudocode_1)], "RData/0. Misc Data/dup_records.rds")
+
+Policy_data <- Policy_data[ !duplicated(pseudocode_2)]
+
+Claims_data[ ,`:=`(pseudocode_1 = paste(c_insdid, c_plancd_dd),
+                   pseudocode_2 = paste(c_insdid, c_plancd_dd, c_dob))]
+
+Claims_data[ duplicated(c_insdid)]
+Claims_data[ duplicated(c_insdid) | duplicated(c_insdid, fromLast = T)]
+
+Claims_data[ duplicated(pseudocode_1)]
+Claims_data[ duplicated(pseudocode_1) | duplicated(pseudocode_1, fromLast = T)]
+Claims_data[ duplicated(pseudocode_2)]
+Claims_data[ duplicated(pseudocode_2) | duplicated(pseudocode_2, fromLast = T)]
+
+```
+
+### Saving Prepped Data
+
+```{r}
+# Creating New Directory from R
+dir.create("RData/1. Prepped Data")
+
+saveRDS(Policy_data, "RData/1. Prepped Data/Policy_data.rds")
+saveRDS(Claims_data, "RData/1. Prepped Data/Claims_data.rds")
+
+```
+
+## 5) Merging data / Crosschecking Data
+
+```{r}
+
+Policy_data <- readRDS("RData/1. Prepped Data/Policy_data.rds")
+Claims_data <- readRDS("RData/1. Prepped Data/Claims_data.rds")
+
+all( Claims_data$c_insdid %in% Policy_data$i_insdid)
+all( Claims_data$c_polnum %in% Policy_data$i_polnum)
+
+Policy_data[ , .N]
+Claims_data[ , .N]
+
+
+# Doing Left join onto Policy Data
+combined_data <-
+  merge(Policy_data, Claims_data, by.x = "i_insdid", by.y = "c_insdid", all.x = T)
+combined_data[,.N]
+
+# Checking that all Claims data have a corresponding match
+all( Claims_data$c_seqid %in% combined_data$c_seqid)
+
+combined_data[ , table(c_clmct, c_clmsts, useNA = "ifany")]
+combined_data[ , table(i_endsts, c_clmsts, useNA = "ifany")]
+
+saveRDS(combined_data[ c_clmsts == "D" & i_endsts == "T"], "RData/0. Misc Data/declined_and_terminated.rds")
+
+# FOr those that are declined, we consider them to be in-force, also to check back later on
+combined_data[ c_clmsts == "D" , 
+               `:=`( i_endsts = "I",
+                     i_terdt  = NA_Date_)]
+
+# Keep columns with "c_" pattern and keep lines with data
+Claims_data <- combined_data[ , .SD , .SDcols = patterns( "c_" )]
+Claims_data <- Claims_data[ !is.na(c_seqid)]
+
+# Keep columns with "i_" pattern 
+Policy_data <- combined_data[ , .SD , .SDcols = patterns( "i_" )]
+
+# Creating Directory
+dir.create("RData/2. Data for exposure")
+
+saveRDS(Policy_data, "RData/2. Data for exposure/Policy_data.rds")
+saveRDS(Claims_data, "RData/2. Data for exposure/Claims_data.rds")
+
+```
